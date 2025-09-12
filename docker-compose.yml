@@ -1,0 +1,42 @@
+name: shashlyk-mashlyk
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: shashlyk
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d shashlyk"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://app:app@db:5432/shashlyk?schema=public
+      JWT_SECRET: supersecretjwt
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+      PORT: "8080"
+      NODE_ENV: production
+      PEXELS_API_KEY: qrIcZK6TbbU8ILkNT0Kagzox8gk3BMj8yv54PqgE5iqUEHSnrqJQfnOE
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads:/app/uploads
+
+  web:
+    build: ./web-app
+    depends_on:
+      - backend
+    ports:
+      - "3001:80"
+
+volumes:
+  uploads:
