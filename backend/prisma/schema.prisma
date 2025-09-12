@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MenuItem {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String    @default("")
+  price       Int       // price in minor units (e.g. cents)
+  imageUrl    String    @default("")
+  items       OrderItem[]
+}
+
+model Courier {
+  id          Int      @id @default(autoincrement())
+  name        String
+  phone       String
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  orders      Order[]
+}
+
+model Order {
+  id           Int          @id @default(autoincrement())
+  customerName String
+  phone        String
+  address      String
+  comment      String       @default("")
+  total        Int
+  status       OrderStatus  @default(PENDING)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  acceptedAt   DateTime?
+  cookingAt    DateTime?
+  onWayAt      DateTime?
+  deliveredAt  DateTime?
+  canceledAt   DateTime?
+  items        OrderItem[]
+  courierId    Int?
+  courier      Courier?     @relation(fields: [courierId], references: [id])
+  userId       Int?
+  user         User?        @relation(fields: [userId], references: [id])
+}
+
+model OrderItem {
+  id              Int      @id @default(autoincrement())
+  orderId         Int
+  menuItemId      Int
+  quantity        Int
+  priceAtPurchase Int
+  order           Order    @relation(fields: [orderId], references: [id])
+  menuItem        MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  COOKING
+  ON_THE_WAY
+  DELIVERED
+  CANCELED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @unique
+  createdAt DateTime @default(now())
+  acceptedAt DateTime?
+  orders    Order[]
+}
